@@ -1,4 +1,6 @@
 package dev.xamacardoso.thermed_api.model.dto;
 
-public record AlertResponseDto(String deviceId) {
+import java.time.LocalDateTime;
+
+public record AlertResponseDto(String deviceId, LocalDateTime timestamp) {
 }
