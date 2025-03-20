@@ -1,10 +1,14 @@
 package dev.xamacardoso.thermed_api.services;
 
+import dev.xamacardoso.thermed_api.model.Device;
 import dev.xamacardoso.thermed_api.model.dto.AlertRequestDto;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.HashMap;
+import java.util.Map;
 
 @Service
 public class TelegramService {
@@ -20,11 +24,21 @@ public class TelegramService {
                         "🌡️ Temperatura: %d\n"+
                         "🔥 Limite Maximo: %d\n"+
                         "❄️ Limite Minimo: %d\n"+
-                        "📍 *Local*: %s\n" +
+//                        "📍 *Local*: %s\n" +
                         "⚙️ *Dispositivo*: %s\n",
                 timestamp,
-                dto.sensor().location(),
-                dto.sensor().identifier()
+                requestDto.temperature(),
+                requestDto.maxTemperature(),
+                requestDto.minTemperature(),
+                requestDto.deviceId()
         );
+
+        Map<String, String> telegramRequestBody = new HashMap<>();
+        telegramRequestBody.put("chat_id", TELEGRAM_MAINTANCE_GROUP_CHAT_ID);
+        telegramRequestBody.put("text", message);
+        telegramRequestBody.put("parse_mode", "Markdown");
+
+        RestTemplate restTemplate = new RestTemplate();
+        restTemplate.postForObject(TELEGRAM_API_URL, telegramRequestBody, String.class);
     }
 }
