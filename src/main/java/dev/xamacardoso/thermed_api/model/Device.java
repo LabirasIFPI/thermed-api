@@ -1,9 +1,9 @@
 package dev.xamacardoso.thermed_api.model;
 
 import jakarta.persistence.*;
-import lombok.Data;
 
-@Data
+import java.util.Objects;
+
 @Entity
 @Table(name = "tb_device")
 public class Device {
@@ -14,7 +14,7 @@ public class Device {
     @Column(unique = true, nullable = false)
     private String deviceId;
 
-    private String location;
+    private String deviceLocation;
     private String description;
 
     @Column(nullable = false)
@@ -22,9 +22,62 @@ public class Device {
 
     public Device() {}
 
-    public Device(String location, String description, String telegramUserId) {
-        this.location = location;
+    public Device(String deviceLocation, String description, String telegramUserId) {
+        this.deviceLocation = deviceLocation;
         this.description = description;
         this.telegramUserId = telegramUserId;
+    }
+
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public String getDeviceId() {
+        return deviceId;
+    }
+
+    public void setDeviceId(String deviceId) {
+        this.deviceId = deviceId;
+    }
+
+    public String getDeviceLocation() {
+        return deviceLocation;
+    }
+
+    public void setDeviceLocation(String deviceLocation) {
+        this.deviceLocation = deviceLocation;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public String getTelegramUserId() {
+        return telegramUserId;
+    }
+
+    public void setTelegramUserId(String telegramUserId) {
+        this.telegramUserId = telegramUserId;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Device device = (Device) o;
+        return Objects.equals(id, device.id);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hashCode(id);
     }
 }

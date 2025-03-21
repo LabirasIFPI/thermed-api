@@ -6,8 +6,7 @@ import org.springframework.boot.autoconfigure.domain.EntityScan;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 
 @SpringBootApplication
-@EntityScan(basePackages = {"dev.xamacardoso.thermed_api"})
-@EnableJpaRepositories(basePackages = {"dev.xamacardoso.thermed_api"})
+
 public class ThermedApiApplication {
 
 	public static void main(String[] args) {

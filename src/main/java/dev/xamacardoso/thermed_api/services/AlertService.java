@@ -6,21 +6,22 @@ import dev.xamacardoso.thermed_api.model.dto.AlertRequestDto;
 import dev.xamacardoso.thermed_api.model.dto.AlertResponseDto;
 import dev.xamacardoso.thermed_api.repositories.AlertRepository;
 import dev.xamacardoso.thermed_api.repositories.DeviceRepository;
+import lombok.AllArgsConstructor;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
-@RequiredArgsConstructor
 public class AlertService {
+    private AlertRepository alertRepository;
+    private DeviceRepository deviceRepository;
+    private AlertMapper alertMapper;
 
-    @Autowired
-    private final AlertRepository alertRepository;
-    @Autowired
-    private final DeviceRepository deviceRepository;
-    @Autowired
-    private final AlertMapper alertMapper;
+    public AlertService(AlertRepository alertRepository, DeviceRepository deviceRepository, AlertMapper alertMapper) {
+        this.alertRepository = alertRepository;
+        this.deviceRepository = deviceRepository;
+        this.alertMapper = alertMapper;
+    }
 
     @Transactional
     public AlertResponseDto save(AlertRequestDto dto) {

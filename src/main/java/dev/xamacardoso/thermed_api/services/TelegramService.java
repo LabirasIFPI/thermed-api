@@ -1,6 +1,5 @@
 package dev.xamacardoso.thermed_api.services;
 
-import dev.xamacardoso.thermed_api.model.Device;
 import dev.xamacardoso.thermed_api.model.dto.AlertRequestDto;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
@@ -17,6 +16,9 @@ public class TelegramService {
     private static final String TELEGRAM_MAINTANCE_GROUP_CHAT_ID = "-4734211587";
     private static final String TELEGRAM_API_URL = "https://api.telegram.org/bot" + TELEGRAM_BOT_TOKEN + "/sendMessage";
 
+    public TelegramService() {
+    }
+
     public void sendTelegramMessage(AlertRequestDto requestDto, LocalDateTime timestamp) {
         String message = String.format(
                 "⚠️ *TEMPERATURA FORA DOS LIMITES!*\n" +
@@ -26,19 +28,22 @@ public class TelegramService {
                         "❄️ Limite Minimo: %d\n"+
 //                        "📍 *Local*: %s\n" +
                         "⚙️ *Dispositivo*: %s\n",
-                timestamp,
+                timestamp.format(fmt),
                 requestDto.temperature(),
                 requestDto.maxTemperature(),
                 requestDto.minTemperature(),
                 requestDto.deviceId()
         );
 
+        // Prepara um JSON para enviar o alerta ao grupo de manutenção
         Map<String, String> telegramRequestBody = new HashMap<>();
         telegramRequestBody.put("chat_id", TELEGRAM_MAINTANCE_GROUP_CHAT_ID);
         telegramRequestBody.put("text", message);
         telegramRequestBody.put("parse_mode", "Markdown");
 
+        // Envio do alerta
         RestTemplate restTemplate = new RestTemplate();
         restTemplate.postForObject(TELEGRAM_API_URL, telegramRequestBody, String.class);
+
     }
 }

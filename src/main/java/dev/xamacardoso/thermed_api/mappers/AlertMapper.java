@@ -5,15 +5,15 @@ import dev.xamacardoso.thermed_api.model.Device;
 import dev.xamacardoso.thermed_api.model.dto.AlertRequestDto;
 import dev.xamacardoso.thermed_api.model.dto.AlertResponseDto;
 import dev.xamacardoso.thermed_api.repositories.DeviceRepository;
-import lombok.Data;
-import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
-@Data
 @Component
-@RequiredArgsConstructor
 public class AlertMapper {
-    private final DeviceRepository deviceRepository;
+    private DeviceRepository deviceRepository;
+
+    public AlertMapper(DeviceRepository deviceRepository) {
+        this.deviceRepository = deviceRepository;
+    }
 
     public Alert toEntity(AlertRequestDto dto){
         Device device = this.deviceRepository.findByDeviceId(dto.deviceId()).orElseThrow(() -> new RuntimeException("Device not found!!!"));
