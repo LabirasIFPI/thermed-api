@@ -1,8 +1,6 @@
 package dev.xamacardoso.thermed_api.model;
 
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.Setter;
 
 import java.time.LocalDateTime;
 import java.util.Objects;
@@ -15,6 +13,7 @@ public class Alert {
     private Long id;
     private LocalDateTime timestamp;
 
+    // Dispositivo que disparou esse alerta
     @ManyToOne
     @JoinColumn(name = "device_id")
     private Device device;

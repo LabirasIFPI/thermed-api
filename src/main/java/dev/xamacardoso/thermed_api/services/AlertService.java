@@ -6,11 +6,10 @@ import dev.xamacardoso.thermed_api.model.dto.AlertRequestDto;
 import dev.xamacardoso.thermed_api.model.dto.AlertResponseDto;
 import dev.xamacardoso.thermed_api.repositories.AlertRepository;
 import dev.xamacardoso.thermed_api.repositories.DeviceRepository;
-import lombok.AllArgsConstructor;
-import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+// Serviço para gerenciar o salvamento de alertas
 @Service
 public class AlertService {
     private AlertRepository alertRepository;

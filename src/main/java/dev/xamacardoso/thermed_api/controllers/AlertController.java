@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+// Controlador responsável por receber as requisições de alerta
 @RestController
 @RequestMapping(value = "/alert")
 public class AlertController {

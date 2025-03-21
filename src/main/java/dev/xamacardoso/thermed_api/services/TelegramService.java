@@ -1,5 +1,6 @@
 package dev.xamacardoso.thermed_api.services;
 
+import dev.xamacardoso.thermed_api.model.Device;
 import dev.xamacardoso.thermed_api.model.dto.AlertRequestDto;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
@@ -16,17 +17,21 @@ public class TelegramService {
     private static final String TELEGRAM_MAINTANCE_GROUP_CHAT_ID = "-4734211587";
     private static final String TELEGRAM_API_URL = "https://api.telegram.org/bot" + TELEGRAM_BOT_TOKEN + "/sendMessage";
 
-    public TelegramService() {
+    private DeviceService deviceService;
+
+    public TelegramService(DeviceService deviceService) {
+        this.deviceService = deviceService;
     }
 
+    // Envia uma mensagem via bot Telegram
     public void sendTelegramMessage(AlertRequestDto requestDto, LocalDateTime timestamp) {
+        // Preparo da mensagem a ser enviada
         String message = String.format(
                 "⚠️ *TEMPERATURA FORA DOS LIMITES!*\n" +
                         "🕛 *Data e Hora*: %s\n" +
                         "🌡️ Temperatura: %d\n"+
                         "🔥 Limite Maximo: %d\n"+
                         "❄️ Limite Minimo: %d\n"+
-//                        "📍 *Local*: %s\n" +
                         "⚙️ *Dispositivo*: %s\n",
                 timestamp.format(fmt),
                 requestDto.temperature(),
@@ -41,9 +46,13 @@ public class TelegramService {
         telegramRequestBody.put("text", message);
         telegramRequestBody.put("parse_mode", "Markdown");
 
-        // Envio do alerta
+        // Envio do alerta para a equipe de manutenção
         RestTemplate restTemplate = new RestTemplate();
         restTemplate.postForObject(TELEGRAM_API_URL, telegramRequestBody, String.class);
 
+        // Prepara e envia um alerta para o usuário associado ao dispositivo
+        Device alertDevice = this.deviceService.findByDeviceId(requestDto.deviceId());
+        telegramRequestBody.put("chat_id", alertDevice.getTelegramUserId());
+        restTemplate.postForObject(TELEGRAM_API_URL, telegramRequestBody, String.class);
     }
 }

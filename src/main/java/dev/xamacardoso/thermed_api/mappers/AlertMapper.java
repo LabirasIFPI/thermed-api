@@ -7,6 +7,7 @@ import dev.xamacardoso.thermed_api.model.dto.AlertResponseDto;
 import dev.xamacardoso.thermed_api.repositories.DeviceRepository;
 import org.springframework.stereotype.Component;
 
+// Classe auxiliar para preparar corpo de resposta de requisições de alerta e outras operações
 @Component
 public class AlertMapper {
     private DeviceRepository deviceRepository;

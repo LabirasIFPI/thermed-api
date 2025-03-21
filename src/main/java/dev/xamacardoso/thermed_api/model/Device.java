@@ -17,6 +17,7 @@ public class Device {
     private String deviceLocation;
     private String description;
 
+    // Id do chat do telegram do usuário associado a esse dispositivo
     @Column(nullable = false)
     private String telegramUserId;
 

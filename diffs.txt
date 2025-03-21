@@ -1,114 +1,499 @@
 diff --git a/diffs.txt b/diffs.txt
+index fd702cb..46af09f 100644
+--- a/diffs.txt
++++ b/diffs.txt
+@@ -1,114 +1,333 @@
+-diff --git a/diffs.txt b/diffs.txt
+-new file mode 100644
+-index 0000000..e69de29
++diff --git a/src/main/java/dev/xamacardoso/thermed_api/ThermedApiApplication.java b/src/main/java/dev/xamacardoso/thermed_api/ThermedApiApplication.java
++index 7390ca5..d797399 100644
++--- a/src/main/java/dev/xamacardoso/thermed_api/ThermedApiApplication.java
+++++ b/src/main/java/dev/xamacardoso/thermed_api/ThermedApiApplication.java
++@@ -6,8 +6,7 @@ import org.springframework.boot.autoconfigure.domain.EntityScan;
++ import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
++ 
++ @SpringBootApplication
++-@EntityScan(basePackages = {"dev.xamacardoso.thermed_api"})
++-@EnableJpaRepositories(basePackages = {"dev.xamacardoso.thermed_api"})
+++
++ public class ThermedApiApplication {
++ 
++ 	public static void main(String[] args) {
+ diff --git a/src/main/java/dev/xamacardoso/thermed_api/controllers/AlertController.java b/src/main/java/dev/xamacardoso/thermed_api/controllers/AlertController.java
+-new file mode 100644
+-index 0000000..761ffcb
+---- /dev/null
++index 568cc7c..dcf5efd 100644
++--- a/src/main/java/dev/xamacardoso/thermed_api/controllers/AlertController.java
+ +++ b/src/main/java/dev/xamacardoso/thermed_api/controllers/AlertController.java
+-@@ -0,0 +1,24 @@
+-+package dev.xamacardoso.thermed_api.controllers;
+-+
+-+import dev.xamacardoso.thermed_api.model.dto.AlertRequestDto;
+-+import dev.xamacardoso.thermed_api.model.dto.AlertResponseDto;
+-+import dev.xamacardoso.thermed_api.services.AlertService;
+-+import org.springframework.beans.factory.annotation.Autowired;
+-+import org.springframework.http.ResponseEntity;
+-+import org.springframework.web.bind.annotation.PostMapping;
+-+import org.springframework.web.bind.annotation.RequestBody;
+-+import org.springframework.web.bind.annotation.RequestMapping;
+-+import org.springframework.web.bind.annotation.RestController;
+-+
+-+@RestController
+-+@RequestMapping(value = "/alert")
+-+public class AlertController {
+-+
+-+    @Autowired
+-+    private AlertService alertService;
+-+
+-+    @PostMapping
+-+    public ResponseEntity<AlertResponseDto> save(@RequestBody AlertRequestDto alertRequestDto) {
+-+        AlertResponseDto responseDto =
+-+    }
+-+}
++@@ -4,7 +4,6 @@ import dev.xamacardoso.thermed_api.model.dto.AlertRequestDto;
++ import dev.xamacardoso.thermed_api.model.dto.AlertResponseDto;
++ import dev.xamacardoso.thermed_api.services.AlertService;
++ import dev.xamacardoso.thermed_api.services.TelegramService;
++-import org.springframework.beans.factory.annotation.Autowired;
++ import org.springframework.http.ResponseEntity;
++ import org.springframework.web.bind.annotation.PostMapping;
++ import org.springframework.web.bind.annotation.RequestBody;
++@@ -14,17 +13,18 @@ import org.springframework.web.bind.annotation.RestController;
++ @RestController
++ @RequestMapping(value = "/alert")
++ public class AlertController {
++-
++-    @Autowired
++     private AlertService alertService;
++-
++-    @Autowired
++     private TelegramService telegramService;
++ 
+++    public AlertController(AlertService alertService, TelegramService telegramService) {
+++        this.alertService = alertService;
+++        this.telegramService = telegramService;
+++    }
+++
++     @PostMapping
++     public ResponseEntity<AlertResponseDto> save(@RequestBody AlertRequestDto alertRequestDto) {
++         AlertResponseDto responseDto = alertService.save(alertRequestDto);
++         telegramService.sendTelegramMessage(alertRequestDto, responseDto.timestamp());
++-        return ResponseEntity.ok(responseDto);
+++        return ResponseEntity.status(200).body(responseDto);
++     }
++ }
++diff --git a/src/main/java/dev/xamacardoso/thermed_api/mappers/AlertMapper.java b/src/main/java/dev/xamacardoso/thermed_api/mappers/AlertMapper.java
++index 60dcf62..22e8663 100644
++--- a/src/main/java/dev/xamacardoso/thermed_api/mappers/AlertMapper.java
+++++ b/src/main/java/dev/xamacardoso/thermed_api/mappers/AlertMapper.java
++@@ -5,15 +5,15 @@ import dev.xamacardoso.thermed_api.model.Device;
++ import dev.xamacardoso.thermed_api.model.dto.AlertRequestDto;
++ import dev.xamacardoso.thermed_api.model.dto.AlertResponseDto;
++ import dev.xamacardoso.thermed_api.repositories.DeviceRepository;
++-import lombok.Data;
++-import lombok.RequiredArgsConstructor;
++ import org.springframework.stereotype.Component;
++ 
++-@Data
++ @Component
++-@RequiredArgsConstructor
++ public class AlertMapper {
++-    private final DeviceRepository deviceRepository;
+++    private DeviceRepository deviceRepository;
+++
+++    public AlertMapper(DeviceRepository deviceRepository) {
+++        this.deviceRepository = deviceRepository;
+++    }
++ 
++     public Alert toEntity(AlertRequestDto dto){
++         Device device = this.deviceRepository.findByDeviceId(dto.deviceId()).orElseThrow(() -> new RuntimeException("Device not found!!!"));
++diff --git a/src/main/java/dev/xamacardoso/thermed_api/model/Alert.java b/src/main/java/dev/xamacardoso/thermed_api/model/Alert.java
++index d73fd6e..90fb02f 100644
++--- a/src/main/java/dev/xamacardoso/thermed_api/model/Alert.java
+++++ b/src/main/java/dev/xamacardoso/thermed_api/model/Alert.java
++@@ -1,11 +1,12 @@
++ package dev.xamacardoso.thermed_api.model;
++ 
++ import jakarta.persistence.*;
++-import lombok.Data;
+++import lombok.Getter;
+++import lombok.Setter;
++ 
++ import java.time.LocalDateTime;
+++import java.util.Objects;
++ 
++-@Data
++ @Entity
++ @Table(name = "tb_alerts")
++ public class Alert {
++@@ -24,4 +25,41 @@ public class Alert {
++         this.device = device;
++         this.timestamp = LocalDateTime.now();
++     }
+++
+++    public Long getId() {
+++        return id;
+++    }
+++
+++    public void setId(Long id) {
+++        this.id = id;
+++    }
+++
+++    public LocalDateTime getTimestamp() {
+++        return timestamp;
+++    }
+++
+++    public void setTimestamp(LocalDateTime timestamp) {
+++        this.timestamp = timestamp;
+++    }
+++
+++    public Device getDevice() {
+++        return device;
+++    }
+++
+++    public void setDevice(Device device) {
+++        this.device = device;
+++    }
+++
+++    @Override
+++    public boolean equals(Object o) {
+++        if (this == o) return true;
+++        if (o == null || getClass() != o.getClass()) return false;
+++        Alert alert = (Alert) o;
+++        return Objects.equals(id, alert.id);
+++    }
+++
+++    @Override
+++    public int hashCode() {
+++        return Objects.hashCode(id);
+++    }
++ }
++diff --git a/src/main/java/dev/xamacardoso/thermed_api/model/Device.java b/src/main/java/dev/xamacardoso/thermed_api/model/Device.java
++index 7509943..313d164 100644
++--- a/src/main/java/dev/xamacardoso/thermed_api/model/Device.java
+++++ b/src/main/java/dev/xamacardoso/thermed_api/model/Device.java
++@@ -1,9 +1,9 @@
++ package dev.xamacardoso.thermed_api.model;
++ 
++ import jakarta.persistence.*;
++-import lombok.Data;
++ 
++-@Data
+++import java.util.Objects;
+++
++ @Entity
++ @Table(name = "tb_device")
++ public class Device {
++@@ -14,7 +14,7 @@ public class Device {
++     @Column(unique = true, nullable = false)
++     private String deviceId;
++ 
++-    private String location;
+++    private String deviceLocation;
++     private String description;
++ 
++     @Column(nullable = false)
++@@ -22,9 +22,62 @@ public class Device {
++ 
++     public Device() {}
++ 
++-    public Device(String location, String description, String telegramUserId) {
++-        this.location = location;
+++    public Device(String deviceLocation, String description, String telegramUserId) {
+++        this.deviceLocation = deviceLocation;
++         this.description = description;
++         this.telegramUserId = telegramUserId;
++     }
+++
+++    public Long getId() {
+++        return id;
+++    }
+++
+++    public void setId(Long id) {
+++        this.id = id;
+++    }
+++
+++    public String getDeviceId() {
+++        return deviceId;
+++    }
+++
+++    public void setDeviceId(String deviceId) {
+++        this.deviceId = deviceId;
+++    }
+++
+++    public String getDeviceLocation() {
+++        return deviceLocation;
+++    }
+++
+++    public void setDeviceLocation(String deviceLocation) {
+++        this.deviceLocation = deviceLocation;
+++    }
+++
+++    public String getDescription() {
+++        return description;
+++    }
+++
+++    public void setDescription(String description) {
+++        this.description = description;
+++    }
+++
+++    public String getTelegramUserId() {
+++        return telegramUserId;
+++    }
+++
+++    public void setTelegramUserId(String telegramUserId) {
+++        this.telegramUserId = telegramUserId;
+++    }
+++
+++    @Override
+++    public boolean equals(Object o) {
+++        if (this == o) return true;
+++        if (o == null || getClass() != o.getClass()) return false;
+++        Device device = (Device) o;
+++        return Objects.equals(id, device.id);
+++    }
+++
+++    @Override
+++    public int hashCode() {
+++        return Objects.hashCode(id);
+++    }
++ }
+ diff --git a/src/main/java/dev/xamacardoso/thermed_api/model/dto/AlertRequestDto.java b/src/main/java/dev/xamacardoso/thermed_api/model/dto/AlertRequestDto.java
+-new file mode 100644
+-index 0000000..a38ed8e
+---- /dev/null
++index e3e4385..a38ed8e 100644
++--- a/src/main/java/dev/xamacardoso/thermed_api/model/dto/AlertRequestDto.java
+ +++ b/src/main/java/dev/xamacardoso/thermed_api/model/dto/AlertRequestDto.java
+-@@ -0,0 +1,4 @@
+-+package dev.xamacardoso.thermed_api.model.dto;
+-+
+-+public record AlertRequestDto(String deviceId, Integer temperature, Integer maxTemperature, Integer minTemperature) {
+-+}
+-diff --git a/src/main/java/dev/xamacardoso/thermed_api/model/dto/AlertResponseDto.java b/src/main/java/dev/xamacardoso/thermed_api/model/dto/AlertResponseDto.java
+-new file mode 100644
+-index 0000000..36924e1
+---- /dev/null
+-+++ b/src/main/java/dev/xamacardoso/thermed_api/model/dto/AlertResponseDto.java
+-@@ -0,0 +1,4 @@
+-+package dev.xamacardoso.thermed_api.model.dto;
+-+
+-+public record AlertResponseDto(String deviceId) {
+-+}
+-diff --git a/src/main/java/dev/xamacardoso/thermed_api/repositories/AlertRepository.java b/src/main/java/dev/xamacardoso/thermed_api/repositories/AlertRepository.java
+-new file mode 100644
+-index 0000000..b3e7358
+---- /dev/null
+-+++ b/src/main/java/dev/xamacardoso/thermed_api/repositories/AlertRepository.java
+-@@ -0,0 +1,7 @@
+-+package dev.xamacardoso.thermed_api.repositories;
+-+
+-+import dev.xamacardoso.thermed_api.model.Alert;
+-+import org.springframework.data.jpa.repository.JpaRepository;
+-+
+-+public interface AlertRepository extends JpaRepository<Alert, Long> {
+-+}
+-diff --git a/src/main/java/dev/xamacardoso/thermed_api/repositories/DeviceRepository.java b/src/main/java/dev/xamacardoso/thermed_api/repositories/DeviceRepository.java
+-new file mode 100644
+-index 0000000..a32fe0f
+---- /dev/null
+-+++ b/src/main/java/dev/xamacardoso/thermed_api/repositories/DeviceRepository.java
+-@@ -0,0 +1,10 @@
+-+package dev.xamacardoso.thermed_api.repositories;
+-+
+-+import dev.xamacardoso.thermed_api.model.Device;
+-+import org.springframework.data.jpa.repository.JpaRepository;
+-+
+-+import java.util.Optional;
+-+
+-+public interface DeviceRepository extends JpaRepository<Device, Long> {
+-+    Optional<Device> findByDeviceId(String deviceId);
+-+}
++@@ -1,6 +1,4 @@
++ package dev.xamacardoso.thermed_api.model.dto;
++ 
++-import java.time.LocalDateTime;
++-
++ public record AlertRequestDto(String deviceId, Integer temperature, Integer maxTemperature, Integer minTemperature) {
++ }
+ diff --git a/src/main/java/dev/xamacardoso/thermed_api/services/AlertService.java b/src/main/java/dev/xamacardoso/thermed_api/services/AlertService.java
+-new file mode 100644
+-index 0000000..0b28de0
+---- /dev/null
++index 154e086..39af146 100644
++--- a/src/main/java/dev/xamacardoso/thermed_api/services/AlertService.java
+ +++ b/src/main/java/dev/xamacardoso/thermed_api/services/AlertService.java
+-@@ -0,0 +1,7 @@
+-+package dev.xamacardoso.thermed_api.services;
+-+
+-+import org.springframework.stereotype.Service;
+-+
+-+@Service
+-+public class AlertService {
+-+}
++@@ -6,21 +6,22 @@ import dev.xamacardoso.thermed_api.model.dto.AlertRequestDto;
++ import dev.xamacardoso.thermed_api.model.dto.AlertResponseDto;
++ import dev.xamacardoso.thermed_api.repositories.AlertRepository;
++ import dev.xamacardoso.thermed_api.repositories.DeviceRepository;
+++import lombok.AllArgsConstructor;
++ import lombok.RequiredArgsConstructor;
++-import org.springframework.beans.factory.annotation.Autowired;
++ import org.springframework.stereotype.Service;
++ import org.springframework.transaction.annotation.Transactional;
++ 
++ @Service
++-@RequiredArgsConstructor
++ public class AlertService {
+++    private AlertRepository alertRepository;
+++    private DeviceRepository deviceRepository;
+++    private AlertMapper alertMapper;
++ 
++-    @Autowired
++-    private final AlertRepository alertRepository;
++-    @Autowired
++-    private final DeviceRepository deviceRepository;
++-    @Autowired
++-    private final AlertMapper alertMapper;
+++    public AlertService(AlertRepository alertRepository, DeviceRepository deviceRepository, AlertMapper alertMapper) {
+++        this.alertRepository = alertRepository;
+++        this.deviceRepository = deviceRepository;
+++        this.alertMapper = alertMapper;
+++    }
++ 
++     @Transactional
++     public AlertResponseDto save(AlertRequestDto dto) {
+ diff --git a/src/main/java/dev/xamacardoso/thermed_api/services/TelegramService.java b/src/main/java/dev/xamacardoso/thermed_api/services/TelegramService.java
+-new file mode 100644
+-index 0000000..b8f075b
+---- /dev/null
++index 31969b5..5f33b1a 100644
++--- a/src/main/java/dev/xamacardoso/thermed_api/services/TelegramService.java
+ +++ b/src/main/java/dev/xamacardoso/thermed_api/services/TelegramService.java
+-@@ -0,0 +1,13 @@
+-+package dev.xamacardoso.thermed_api.services;
+-+
+-+import org.springframework.stereotype.Service;
++@@ -1,6 +1,5 @@
++ package dev.xamacardoso.thermed_api.services;
++ 
++-import dev.xamacardoso.thermed_api.model.Device;
++ import dev.xamacardoso.thermed_api.model.dto.AlertRequestDto;
++ import org.springframework.stereotype.Service;
++ import org.springframework.web.client.RestTemplate;
++@@ -17,6 +16,9 @@ public class TelegramService {
++     private static final String TELEGRAM_MAINTANCE_GROUP_CHAT_ID = "-4734211587";
++     private static final String TELEGRAM_API_URL = "https://api.telegram.org/bot" + TELEGRAM_BOT_TOKEN + "/sendMessage";
++ 
+++    public TelegramService() {
+++    }
+ +
+-+import java.time.format.DateTimeFormatter;
++     public void sendTelegramMessage(AlertRequestDto requestDto, LocalDateTime timestamp) {
++         String message = String.format(
++                 "⚠️ *TEMPERATURA FORA DOS LIMITES!*\n" +
++@@ -26,19 +28,22 @@ public class TelegramService {
++                         "❄️ Limite Minimo: %d\n"+
++ //                        "📍 *Local*: %s\n" +
++                         "⚙️ *Dispositivo*: %s\n",
++-                timestamp,
+++                timestamp.format(fmt),
++                 requestDto.temperature(),
++                 requestDto.maxTemperature(),
++                 requestDto.minTemperature(),
++                 requestDto.deviceId()
++         );
++ 
+++        // Prepara um JSON para enviar o alerta ao grupo de manutenção
++         Map<String, String> telegramRequestBody = new HashMap<>();
++         telegramRequestBody.put("chat_id", TELEGRAM_MAINTANCE_GROUP_CHAT_ID);
++         telegramRequestBody.put("text", message);
++         telegramRequestBody.put("parse_mode", "Markdown");
++ 
+++        // Envio do alerta
++         RestTemplate restTemplate = new RestTemplate();
++         restTemplate.postForObject(TELEGRAM_API_URL, telegramRequestBody, String.class);
+ +
+-+@Service
+-+public class TelegramService {
+-+    private static final DateTimeFormatter fmt = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
+-+    private static final String TELEGRAM_BOT_TOKEN = "7759623885:AAH9TQyGc7N24eY7rEo-YgcFh8UOUkpkE9U";
+-+    private static final String TELEGRAM_MAINTANCE_GROUP_CHAT_ID = "-4734211587";
+-+    private static final String TELEGRAM_API_URL = "https://api.telegram.org/bot" + TELEGRAM_BOT_TOKEN + "/sendMessage";
+-+}
++     }
++ }
++diff --git a/src/main/resources/application.properties b/src/main/resources/application.properties
++index 7335667..ac457a5 100644
++--- a/src/main/resources/application.properties
+++++ b/src/main/resources/application.properties
++@@ -2,9 +2,9 @@ spring.application.name=thermed-api
++ spring.jpa.open-in-view=false
++ 
++ # environment variables with default values
++-spring.datasource.url=jdbc:postgresql://localhost:5432/secutity_monitor
+++spring.datasource.url=jdbc:postgresql://localhost:5432/thermed-local-db
++ spring.datasource.username=postgres
++-spring.datasource.password=jotave9474
+++spring.datasource.password=Xaxaaxv1!
++ 
++ # Hibernate configuration
++ spring.jpa.show-sql=true
+diff --git a/src/main/java/dev/xamacardoso/thermed_api/services/DeviceService.java b/src/main/java/dev/xamacardoso/thermed_api/services/DeviceService.java
 new file mode 100644
-index 0000000..e69de29
-diff --git a/src/main/java/dev/xamacardoso/thermed_api/controllers/AlertController.java b/src/main/java/dev/xamacardoso/thermed_api/controllers/AlertController.java
-new file mode 100644
-index 0000000..761ffcb
+index 0000000..87e26e5
 --- /dev/null
-+++ b/src/main/java/dev/xamacardoso/thermed_api/controllers/AlertController.java
-@@ -0,0 +1,24 @@
-+package dev.xamacardoso.thermed_api.controllers;
-+
-+import dev.xamacardoso.thermed_api.model.dto.AlertRequestDto;
-+import dev.xamacardoso.thermed_api.model.dto.AlertResponseDto;
-+import dev.xamacardoso.thermed_api.services.AlertService;
-+import org.springframework.beans.factory.annotation.Autowired;
-+import org.springframework.http.ResponseEntity;
-+import org.springframework.web.bind.annotation.PostMapping;
-+import org.springframework.web.bind.annotation.RequestBody;
-+import org.springframework.web.bind.annotation.RequestMapping;
-+import org.springframework.web.bind.annotation.RestController;
-+
-+@RestController
-+@RequestMapping(value = "/alert")
-+public class AlertController {
-+
-+    @Autowired
-+    private AlertService alertService;
-+
-+    @PostMapping
-+    public ResponseEntity<AlertResponseDto> save(@RequestBody AlertRequestDto alertRequestDto) {
-+        AlertResponseDto responseDto =
-+    }
-+}
-diff --git a/src/main/java/dev/xamacardoso/thermed_api/model/dto/AlertRequestDto.java b/src/main/java/dev/xamacardoso/thermed_api/model/dto/AlertRequestDto.java
-new file mode 100644
-index 0000000..a38ed8e
---- /dev/null
-+++ b/src/main/java/dev/xamacardoso/thermed_api/model/dto/AlertRequestDto.java
-@@ -0,0 +1,4 @@
-+package dev.xamacardoso.thermed_api.model.dto;
-+
-+public record AlertRequestDto(String deviceId, Integer temperature, Integer maxTemperature, Integer minTemperature) {
-+}
-diff --git a/src/main/java/dev/xamacardoso/thermed_api/model/dto/AlertResponseDto.java b/src/main/java/dev/xamacardoso/thermed_api/model/dto/AlertResponseDto.java
-new file mode 100644
-index 0000000..36924e1
---- /dev/null
-+++ b/src/main/java/dev/xamacardoso/thermed_api/model/dto/AlertResponseDto.java
-@@ -0,0 +1,4 @@
-+package dev.xamacardoso.thermed_api.model.dto;
-+
-+public record AlertResponseDto(String deviceId) {
-+}
-diff --git a/src/main/java/dev/xamacardoso/thermed_api/repositories/AlertRepository.java b/src/main/java/dev/xamacardoso/thermed_api/repositories/AlertRepository.java
-new file mode 100644
-index 0000000..b3e7358
---- /dev/null
-+++ b/src/main/java/dev/xamacardoso/thermed_api/repositories/AlertRepository.java
-@@ -0,0 +1,7 @@
-+package dev.xamacardoso.thermed_api.repositories;
-+
-+import dev.xamacardoso.thermed_api.model.Alert;
-+import org.springframework.data.jpa.repository.JpaRepository;
-+
-+public interface AlertRepository extends JpaRepository<Alert, Long> {
-+}
-diff --git a/src/main/java/dev/xamacardoso/thermed_api/repositories/DeviceRepository.java b/src/main/java/dev/xamacardoso/thermed_api/repositories/DeviceRepository.java
-new file mode 100644
-index 0000000..a32fe0f
---- /dev/null
-+++ b/src/main/java/dev/xamacardoso/thermed_api/repositories/DeviceRepository.java
-@@ -0,0 +1,10 @@
-+package dev.xamacardoso.thermed_api.repositories;
++++ b/src/main/java/dev/xamacardoso/thermed_api/services/DeviceService.java
+@@ -0,0 +1,18 @@
++package dev.xamacardoso.thermed_api.services;
 +
 +import dev.xamacardoso.thermed_api.model.Device;
-+import org.springframework.data.jpa.repository.JpaRepository;
-+
-+import java.util.Optional;
-+
-+public interface DeviceRepository extends JpaRepository<Device, Long> {
-+    Optional<Device> findByDeviceId(String deviceId);
-+}
-diff --git a/src/main/java/dev/xamacardoso/thermed_api/services/AlertService.java b/src/main/java/dev/xamacardoso/thermed_api/services/AlertService.java
-new file mode 100644
-index 0000000..0b28de0
---- /dev/null
-+++ b/src/main/java/dev/xamacardoso/thermed_api/services/AlertService.java
-@@ -0,0 +1,7 @@
-+package dev.xamacardoso.thermed_api.services;
-+
++import dev.xamacardoso.thermed_api.repositories.DeviceRepository;
 +import org.springframework.stereotype.Service;
 +
 +@Service
-+public class AlertService {
++public class DeviceService {
++    private DeviceRepository deviceRepository;
++
++    public DeviceService(DeviceRepository deviceRepository) {
++        this.deviceRepository = deviceRepository;
++    }
++
++    public Device findByDeviceId(String deviceId) {
++        return deviceRepository.findByDeviceId(deviceId).orElseThrow(() -> new RuntimeException("Device not found"));
++    }
 +}
 diff --git a/src/main/java/dev/xamacardoso/thermed_api/services/TelegramService.java b/src/main/java/dev/xamacardoso/thermed_api/services/TelegramService.java
-new file mode 100644
-index 0000000..b8f075b
---- /dev/null
+index 5f33b1a..2acf137 100644
+--- a/src/main/java/dev/xamacardoso/thermed_api/services/TelegramService.java
 +++ b/src/main/java/dev/xamacardoso/thermed_api/services/TelegramService.java
-@@ -0,0 +1,13 @@
-+package dev.xamacardoso.thermed_api.services;
+@@ -1,5 +1,6 @@
+ package dev.xamacardoso.thermed_api.services;
+ 
++import dev.xamacardoso.thermed_api.model.Device;
+ import dev.xamacardoso.thermed_api.model.dto.AlertRequestDto;
+ import org.springframework.stereotype.Service;
+ import org.springframework.web.client.RestTemplate;
+@@ -16,7 +17,10 @@ public class TelegramService {
+     private static final String TELEGRAM_MAINTANCE_GROUP_CHAT_ID = "-4734211587";
+     private static final String TELEGRAM_API_URL = "https://api.telegram.org/bot" + TELEGRAM_BOT_TOKEN + "/sendMessage";
+ 
+-    public TelegramService() {
++    private DeviceService deviceService;
 +
-+import org.springframework.stereotype.Service;
++    public TelegramService(DeviceService deviceService) {
++        this.deviceService = deviceService;
+     }
+ 
+     public void sendTelegramMessage(AlertRequestDto requestDto, LocalDateTime timestamp) {
+@@ -45,5 +49,9 @@ public class TelegramService {
+         RestTemplate restTemplate = new RestTemplate();
+         restTemplate.postForObject(TELEGRAM_API_URL, telegramRequestBody, String.class);
+ 
++        Device alertDevice = this.deviceService.findByDeviceId(requestDto.deviceId());
++        telegramRequestBody.put("chat_id", alertDevice.getTelegramUserId());
 +
-+import java.time.format.DateTimeFormatter;
-+
-+@Service
-+public class TelegramService {
-+    private static final DateTimeFormatter fmt = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
-+    private static final String TELEGRAM_BOT_TOKEN = "7759623885:AAH9TQyGc7N24eY7rEo-YgcFh8UOUkpkE9U";
-+    private static final String TELEGRAM_MAINTANCE_GROUP_CHAT_ID = "-4734211587";
-+    private static final String TELEGRAM_API_URL = "https://api.telegram.org/bot" + TELEGRAM_BOT_TOKEN + "/sendMessage";
-+}
++        restTemplate.postForObject(TELEGRAM_API_URL, telegramRequestBody, String.class);
+     }
+ }
